@@ -38,5 +38,19 @@ exports.updateVote = (req, res) => {
 exports.deleteVote = (req, res) => {
     Vote.findByIdAndDelete(req.params.id)
         .then(() => res.json({ message: 'Vote deleted' }))
-        .catch(err => res.status(500).json({ error: err.message }));
-}; 
+        .catch(err => res.status(500).json({ error: err.message }));
+};
+
+
+
+
+exports.createVote = (req, res) => {
+    console.log('Received Vote Data:', req.body); // Log request data
+    const newVote = new Vote(req.body);
+    newVote.save()
+        .then(vote => res.json(vote))
+        .catch(err => {
+            console.error('Error:', err); // Log error if something goes wrong
+            res.status(500).json({ error: err.message });
+        });
+};
