@@ -1,12 +1,15 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const voteRoutes = require('./routes/votes');   
+const voteRoutes = require('./routes/votes');
 const authMiddleware = require('./middleware/auth');
 const dbConfig = require('./config/db');
-
+const cors = require('cors');
 
 const app = express();
+
+// Enable CORS
+app.use(cors());
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -17,11 +20,15 @@ app.use(authMiddleware);
 app.use('/api/votes', voteRoutes);
 
 // MongoDB connection
-mongoose.connect(dbConfig.url, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.log(err));
+mongoose.connect(dbConfig.url, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.log(err));
 
-const PORT = process.env.PORT || 3001;
+// Start server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
