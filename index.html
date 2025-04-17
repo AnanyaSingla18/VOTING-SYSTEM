@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Online Voting System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background-color: #f0f4f8;
+    }
+    h1 {
+      color: #333;
+    }
+    form, .vote {
+      background: white;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    input, button {
+      margin: 5px 0;
+      padding: 8px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      font-weight: bold;
+    }
+    .delete-btn {
+      background-color: #e74c3c;
+    }
+    .update-btn {
+      background-color: #3498db;
+    }
+    #notification {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      display: none;
+      font-size: 16px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <h1>Voting Management System</h1>
+
+  <!-- Notification Banner -->
+  <div id="notification">Vote Submitted!</div>
+
+  <form id="voteForm">
+    <h3>Add New Vote</h3>
+    <input type="text" id="candidate" placeholder="Candidate Name" required />
+    <input type="text" id="voter" placeholder="Voter Name" required />
+    <button type="submit">Submit Vote</button>
+  </form>
+
+  <div id="votesContainer">
+    <h3>All Votes</h3>
+  </div>
+
+  <script>
+    const apiBase = 'http://localhost:3000/api/votes';
+    const voteForm = document.getElementById('voteForm');
+    const votesContainer = document.getElementById('votesContainer');
+    const notification = document.getElementById('notification');
+
+    // Load and display all votes
+    async function loadVotes() {
+      try {
+        votesContainer.innerHTML = '<h3>All Votes</h3>';
+        const res = await fetch(apiBase);
+        if (!res.ok) throw new Error(`Error: ${res.status}`);
+        const votes = await res.json();
+
+        votes.forEach(vote => {
+          const div = document.createElement('div');
+          div.className = 'vote';
+          div.innerHTML = `
+            <p><strong>Candidate:</strong> ${vote.candidate}</p>
+            <p><strong>Voter:</strong> ${vote.voter}</p>
+            <button class="update-btn" onclick="updateVotePrompt('${vote._id}', '${vote.candidate}', '${vote.voter}')">Update</button>
+            <button class="delete-btn" onclick="deleteVote('${vote._id}')">Delete</button>
+          `;
+          votesContainer.appendChild(div);
+        });
+      } catch (error) {
+        console.error('Failed to load votes:', error);
+      }
+    }
+
+    // Show a notification
+    function showNotification(message) {
+      notification.textContent = message;
+      notification.style.display = 'block';
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 3000);
+    }
+
+    // Handle vote submission
+    voteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const candidate = document.getElementById('candidate').value;
+      const voter = document.getElementById('voter').value;
+
+      if (!candidate || !voter) return;
+
+      try {
+        const res = await fetch(apiBase, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ candidate, voter })
+        });
+
+        if (!res.ok) throw new Error(`Error: ${res.status}`);
+        voteForm.reset();
+        loadVotes();
+        showNotification('Vote Submitted!');
+      } catch (error) {
+        console.error('Failed to submit vote:', error);
+      }
+    });
+
+    // Delete vote
+    async function deleteVote(id) {
+      try {
+        const res = await fetch(`${apiBase}/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(`Error: ${res.status}`);
+        loadVotes();
+      } catch (error) {
+        console.error('Failed to delete vote:', error);
+      }
+    }
+
+    // Update vote
+    async function updateVotePrompt(id, currentCandidate, currentVoter) {
+      const newCandidate = prompt("Enter new candidate name:", currentCandidate);
+      const newVoter = prompt("Enter new voter name:", currentVoter);
+
+      if (newCandidate && newVoter) {
+        try {
+          const res = await fetch(`${apiBase}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ candidate: newCandidate, voter: newVoter })
+          });
+
+          if (!res.ok) throw new Error(`Error: ${res.status}`);
+          loadVotes();
+        } catch (error) {
+          console.error('Failed to update vote:', error);
+        }
+      }
+    }
+
+    // Load votes on page load
+    loadVotes();
+  </script>
+</body>
+</html>
